@@ -4,7 +4,16 @@ Compare two Gerber exports and save images of every matched layer. Inputs can be
 two ZIP/RAR archives, two folders, or two individual Gerber files. All processing
 is local. The tool includes a file-picker interface and a command-line interface.
 
-## Windows setup
+[Download Windows app](https://github.com/weiliangng/pcb-diff/releases/latest) ·
+[Quick start](#quick-start-windows) · [Examples](#examples) ·
+[Read the results](#read-the-results) · [Command line](#command-line)
+
+PCB Diff renders both versions on a common physical coordinate grid, subtracts
+their artwork, and processes every matched layer in one run. Gerber input can
+come from any EDA tool that exports supported Gerber artwork; native KiCad project
+files are not required.
+
+## Quick start (Windows)
 
 Download the portable Windows ZIP from
 [GitHub Releases](https://github.com/weiliangng/pcb-diff/releases/latest), extract
@@ -16,7 +25,29 @@ same comparison through a terminal:
 .\pcb-diff-cli.exe "older.zip" "newer.zip" -o "comparison"
 ```
 
-For running or modifying the Python source:
+### Use the desktop app
+
+1. Open **PCB-Diff.exe**.
+2. Beside **Older input**, click **File...** to select the old Gerber ZIP/RAR,
+   or **Folder...** to select an extracted export.
+3. Beside **Newer input**, select the revised export in the same way. To compare
+   individual layers directly, select one Gerber file on each side instead.
+4. Under **Save results**, choose the destination. **Choose...** creates a new
+   timestamped comparison folder beneath the folder you select. A manually typed
+   destination must be new or empty.
+5. Start with **Pixels/mm: 50**, **Edge tolerance (mm): 0.02**, and **Layers: copper**.
+   This renders at 20 micrometres per pixel and compares all identified copper
+   layers. Select **all** to include recognized masks, silkscreen, paste, outline
+   and documentation layers.
+6. Click **Compare** and wait for **Finished**. Click **Open report** to inspect
+   each layer and its enlarged change regions in your browser.
+
+If automatic matching reports unknown or ambiguous layers, select a JSON file
+under **Layer map (optional)**. See [Layer matching](#layer-matching) for its format.
+The tool compares corresponding layers; two separately selected files are your
+explicit choice of a pair.
+
+### Run the Python source
 
 1. Install Python 3.12 or newer from [python.org](https://www.python.org/downloads/).
 2. Extract this whole tool folder, then run `setup-windows.cmd` once. Setup downloads
@@ -28,7 +59,103 @@ The tool makes no network requests when comparing files. Real RAR archives need
 7-Zip or UnRAR; ZIP archives with a `.rar` filename work without those programs.
 Prefer ZIP for an installation with no additional archive utility.
 
+## Examples
+
+These real comparisons correspond to the bank and SCV2 example reports. The
+images use the original PNG outputs from the reports, so they remain sharp when
+opened at full resolution. The example Gerber inputs are not bundled; substitute
+your own older and newer exports in the commands below.
+
+**Green: added artwork. Red: removed artwork. Gray: unchanged artwork in the
+exact comparison.** Dark areas show where neither version has exposed artwork.
+The colors describe the rendered layer; they do not identify components or nets.
+
+### Bank: two copper layers, small localized edits
+
+The top layer contains several small changes. The bottom layer's exact difference
+is only +0.0008 / -0.0024 mm², with no changes surviving the 0.02 mm edge tolerance.
+This example shows why an almost unchanged board can still have a few differing
+edge pixels in the exact result.
+
+![Bank comparison: top and bottom copper, with small top-layer edits highlighted in green and red](docs/images/bank-overview.png)
+
+An equivalent run for your own bank exports:
+
+```powershell
+.\pcb-diff-cli.exe "bank-old.zip" "bank-new.zip" -o "bank-comparison"
+```
+
+### SCV2: four copper layers
+
+Top, inner 1, inner 2 and bottom copper are compared together. Each panel uses
+the same board coordinates, making it easy to locate an edit across layers.
+Green and red regions appear on all four layers in this example.
+
+![SCV2 comparison: top, inner 1, inner 2 and bottom copper shown together](docs/images/scv2-overview.png)
+
+```powershell
+.\pcb-diff-cli.exe "scv2-old.zip" "scv2-new.zip" -o "scv2-comparison"
+```
+
+### Inspect a changed region
+
+In the HTML report, expand the **change groups** section under a layer to see its
+largest detected regions. The crop below is from SCV2 bottom copper. Nearby red
+and green paths show the old and new artwork around a routing edit; the exact
+difference stays visible inside the crop.
+
+![Enlarged SCV2 bottom-copper region showing removed red paths and added green paths](docs/images/scv2-routing-detail.png)
+
+Crops are selected from differences that survive the edge tolerance, then show
+the exact colored subtraction inside each crop. The default exports up to twelve
+crops per layer; every detected region is recorded in `results.json`.
+
+## Read the results
+
+1. Open **report.html** and select a layer using the links near the top.
+2. Inspect **Exact difference** first. Green is newer-only artwork, red is
+   older-only artwork, and gray is common artwork. The `+` and `-` values estimate
+   added and removed area in mm².
+3. Compare **Edge-tolerant difference** when you see thin fringes around otherwise
+   matching edges. It suppresses changes within the selected physical distance
+   of artwork in the opposite version. Gray here can include excluded changes.
+4. Use **Older** and **Newer** to open the binary source renders, or expand the
+   region crops for detail. Open an image directly to view it at full resolution.
+
+The default 0.02 mm tolerance is one pixel at 50 pixels/mm. It can hide real edits
+near an existing edge, so always retain the exact comparison. Increasing resolution
+improves the representation of smaller features but increases memory use. The
+added/removed area values are raster estimates, not an electrical correctness check.
+
+### Save a report as a PDF
+
+Open `report.html` in a browser, expand the region sections you want included,
+then use **Print** and **Save as PDF**. Enable **Background graphics** to preserve
+the report's dark background and color legend. Browser header/footer settings
+control whether the document prints its date, URL and page numbers.
+PDF creation uses the browser's print function; the app directly generates PNG,
+HTML and JSON outputs.
+
 ## Command line
+
+The standalone Windows executable uses the same options as the Python source:
+
+```powershell
+# Every matched copper layer from two export folders
+.\pcb-diff-cli.exe "old-export" "new-export" -o "comparison"
+
+# Add mask, silkscreen, paste, outline and documentation artwork
+.\pcb-diff-cli.exe "old.zip" "new.zip" --scope all -o "all-artwork"
+
+# Compare one corresponding Gerber pair directly
+.\pcb-diff-cli.exe "old-top.gbr" "new-top.gbr" -o "top-layer"
+
+# Render at 10 micrometres/pixel and disable secondary edge suppression
+.\pcb-diff-cli.exe "old.zip" "new.zip" --dpmm 100 --tolerance-mm 0 -o "fine-comparison"
+
+# Match unusual exporter filenames explicitly
+.\pcb-diff-cli.exe "old.zip" "new.zip" --layer-map "my-layer-map.json" -o "mapped-comparison"
+```
 
 After Windows setup:
 
@@ -132,6 +259,9 @@ regardless of filename; choose the corresponding layers yourself in that mode.
 
 ## What was hardcoded in the first script
 
+<details>
+<summary>Early prototype assumptions and how they became configurable</summary>
+
 | First script assumption | This export |
 |---|---|
 | Four copper suffixes: GTL, G1, G2, GBL | Any number of recognized inner layers; X2/common names and manual mapping |
@@ -155,6 +285,8 @@ treated as input data, not instructions.
 The edge-tolerant results differ slightly from the first export because the
 secondary tolerance now uses Euclidean distance instead of a square pixel
 neighborhood. Exact subtraction is unchanged at the same settings and canvas.
+
+</details>
 
 ## Extension points and remaining limits
 

@@ -42,6 +42,9 @@ with zipfile.ZipFile(portable,'w',zipfile.ZIP_DEFLATED) as archive:
         archive.write(root/name,name)
     for path in sorted((root/'examples').glob('*.json')):
         archive.write(path,'examples/'+path.name)
+    for path in sorted((root/'docs').rglob('*')):
+        if path.is_file():
+            archive.write(path,path.relative_to(root).as_posix())
     archive.writestr('THIRD-PARTY-LICENSES.txt',third_party)
 (out/'THIRD-PARTY-LICENSES.txt').write_text(third_party,encoding='utf-8')
 for pattern in ['*.whl','*.tar.gz']:
