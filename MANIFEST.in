@@ -1,0 +1,7 @@
+include README.md VALIDATION.md requirements.txt requirements-build.txt pcb-diff.spec
+include pcb_diff.py pcb_diff_gui.py *.cmd .gitignore .gitattributes
+recursive-include examples *.json
+recursive-include scripts *.py
+recursive-include tests *.py
+recursive-include .github *.yml
+global-exclude __pycache__ *.py[cod]

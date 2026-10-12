@@ -1,0 +1,7 @@
+{
+  "layers": [
+    {"name": "Top copper", "kind": "copper", "old": "board-F_Cu.gbr", "new": "revision2-top.gbr"},
+    {"name": "Inner 1 copper", "kind": "copper", "old": "board-In1_Cu.gbr", "new": "revision2-inner1.gbr"},
+    {"name": "Bottom copper", "kind": "copper", "old": "board-B_Cu.gbr", "new": "revision2-bottom.gbr"}
+  ]
+}

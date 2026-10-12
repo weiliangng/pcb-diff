@@ -1,0 +1,19 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pcb-artwork-diff"
+version = "1.0.0"
+description = "Batch visual comparison of Gerber PCB artwork"
+requires-python = ">=3.12"
+dependencies = ["gerbonara==1.6.3", "resvg-py==0.5.0", "numpy==2.3.5", "Pillow==12.3.0", "scipy==1.18.1"]
+
+[project.scripts]
+pcb-diff = "pcb_diff.cli:main"
+
+[project.gui-scripts]
+pcb-diff-gui = "pcb_diff.gui:main"
+
+[tool.setuptools.packages.find]
+include = ["pcb_diff*"]

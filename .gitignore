@@ -1,0 +1,12 @@
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+comparisons/
+pcb-diff-*/
+build/
+dist/
+release-assets/
+*.egg-info/
+.pytest_cache/
+*.log
